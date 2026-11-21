@@ -76,4 +76,8 @@ public class Order {
             this.createdAt = LocalDateTime.now();
         }
     }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 }

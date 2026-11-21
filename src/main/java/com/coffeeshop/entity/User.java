@@ -61,4 +61,8 @@ public class User {
         orders.add(order);
         order.setUser(this);
     }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 }
