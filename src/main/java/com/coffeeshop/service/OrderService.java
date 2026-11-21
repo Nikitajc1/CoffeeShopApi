@@ -3,23 +3,30 @@ package com.coffeeshop.service;
 import com.coffeeshop.entity.Order;
 import com.coffeeshop.entity.User;
 import com.coffeeshop.exception.OrderNotFoundException;
+import com.coffeeshop.exception.UserNotFoundException;
 import com.coffeeshop.repository.OrderRepository;
+import com.coffeeshop.repository.UserRepository;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 
 @Service
 public class OrderService {
     private final OrderRepository orderRepository;
+    private final UserRepository userRepository;
 
-    public OrderService(OrderRepository orderRepository) {
+    public OrderService(OrderRepository orderRepository, UserRepository userRepository) {
         this.orderRepository = orderRepository;
+        this.userRepository = userRepository;
     }
 
     public Order createOrder(
-            User user,
+            Long userId,
             String description,
             String status ) {
         return orderRepository.save(new Order(
-                user,
+                userRepository.findById(userId)
+                        .orElseThrow(() -> new UserNotFoundException(userId)),
                 description,
                 status
         ));

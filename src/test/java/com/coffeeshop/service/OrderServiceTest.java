@@ -3,7 +3,9 @@ package com.coffeeshop.service;
 import com.coffeeshop.entity.Order;
 import com.coffeeshop.entity.User;
 import com.coffeeshop.exception.OrderNotFoundException;
+import com.coffeeshop.exception.UserNotFoundException;
 import com.coffeeshop.repository.OrderRepository;
+import com.coffeeshop.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -23,24 +25,32 @@ public class OrderServiceTest {
     @Mock
     private OrderRepository orderRepository;
 
+    @Mock
+    private UserRepository userRepository;
+
     @InjectMocks
     private OrderService orderService;
 
     @Test
     void shouldCreateOrder() {
         User user = new User("Test", "asd@asd.asd");
+        user.setId(1L);
         Order order = new Order(user, "asd", "NEW");
         order.setId(1L);
         order.setCreatedAt(LocalDateTime.now());
 
+        when(userRepository.findById(1L))
+                .thenReturn(Optional.of(user));
+
         when(orderRepository.save(any(Order.class)))
                 .thenReturn(order);
 
-        Order result = orderService.createOrder(user, "asd", "NEW");
+        Order result = orderService.createOrder(1L, "asd", "NEW");
 
         ArgumentCaptor<Order> captor = ArgumentCaptor.forClass(Order.class);
 
         verify(orderRepository).save(captor.capture());
+        verify(userRepository, times(1)).findById(1L);
 
         Order capturedOrder = captor.getValue();
 
@@ -92,5 +102,21 @@ public class OrderServiceTest {
         );
         verify(orderRepository, times(1))
                 .findById(orderId);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUserNotFound() {
+        Long userId = 1L;
+
+        when(userRepository.findById(userId))
+                .thenReturn(Optional.empty());
+
+        assertEquals("User with id 1 not found",
+                assertThrows(UserNotFoundException.class, () -> {
+                    orderService.createOrder(userId, "asd", "NEW");
+                }).getMessage());
+
+        verify(userRepository, times(1)).findById(userId);
+        verify(orderRepository, never()).save(any(Order.class));
     }
 }
