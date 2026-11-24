@@ -6,13 +6,18 @@ import com.coffeeshop.exception.OrderNotFoundException;
 import com.coffeeshop.exception.UserNotFoundException;
 import com.coffeeshop.repository.OrderRepository;
 import com.coffeeshop.repository.UserRepository;
+import org.aspectj.weaver.ast.Or;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import javax.swing.text.html.Option;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -118,5 +123,130 @@ public class OrderServiceTest {
 
         verify(userRepository, times(1)).findById(userId);
         verify(orderRepository, never()).save(any(Order.class));
+    }
+
+    @Test
+    void shouldGetOrdersByUserId() {
+        User user = new User("Test", "asd@asd.asd");
+        user.setId(1L);
+        Order order = new Order(user, "asd", "NEW");
+        List<Order> orders = List.of(order);
+
+        when(userRepository.findById(user.getId()))
+                .thenReturn(Optional.of(user));
+
+        when(orderRepository.findByUserId(user.getId()))
+                .thenReturn(orders);
+
+        List<Order> result = orderService.getOrdersByUserId(user.getId());
+
+        assertEquals(1, result.size());
+        assertSame(order, result.getFirst());
+
+        verify(userRepository, times(1)).findById(user.getId());
+        verify(orderRepository, times(1)).findByUserId(user.getId());
+
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenUserHasNoOrders() {
+        User user = new User("Test", "asd@asd.asd");
+        user.setId(1L);
+
+        when(userRepository.findById(user.getId()))
+                .thenReturn(Optional.of(user));
+
+        when(orderRepository.findByUserId(user.getId()))
+                .thenReturn(List.of());
+
+        List<Order> result = orderService.getOrdersByUserId(user.getId());
+
+        assertEquals(0, result.size());
+
+        verify(userRepository, times(1)).findById(user.getId());
+        verify(orderRepository, times(1)).findByUserId(user.getId());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUserNotFoundWhenGetOrders() {
+        Long userId = 1L;
+
+        when(userRepository.findById(userId))
+                .thenReturn(Optional.empty());
+
+        assertEquals("User with id 1 not found",
+                assertThrows(UserNotFoundException.class, () -> {
+                    orderService.getOrdersByUserId(userId);
+                }).getMessage());
+
+        verify(userRepository, times(1)).findById(userId);
+        verify(orderRepository, never()).findByUserId(userId);
+    }
+
+    @Test
+    void shouldGetOrdersByStatusAndUserId() {
+        User user = new User("Test", "asd@asd.asd");
+        user.setId(1L);
+        Order order = new Order(user, "asd", "NEW");
+        List<Order> orders = List.of(order);
+
+        when(userRepository.findById(user.getId()))
+                .thenReturn(Optional.of(user));
+
+        when(orderRepository.findByStatusAndUserId(order.getStatus(), user.getId()))
+                .thenReturn(orders);
+
+        List<Order> result = orderService
+                .getOrdersByStatusAndUserId(order.getStatus(), user.getId());
+
+        assertAll(
+                () -> assertEquals(1, result.size()),
+                () -> assertSame(order, result.getFirst()),
+                () -> assertEquals("NEW", result.getFirst().getStatus())
+        );
+
+        verify(userRepository, times(1)).findById(user.getId());
+        verify(orderRepository, times(1))
+                .findByStatusAndUserId(order.getStatus(), user.getId());
+
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenNoOrdersWithSpecifiedStatus() {
+        User user = new User("Test", "asd@asd.asd");
+        user.setId(1L);
+
+        when(userRepository.findById(user.getId()))
+                .thenReturn(Optional.of(user));
+
+        when(orderRepository.findByStatusAndUserId("NEW", user.getId()))
+                .thenReturn(List.of());
+
+        List<Order> result = orderService
+                .getOrdersByStatusAndUserId("NEW", user.getId());
+
+        assertEquals(0, result.size());
+
+        verify(userRepository, times(1)).findById(user.getId());
+        verify(orderRepository, times(1))
+                .findByStatusAndUserId("NEW", user.getId());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUserNotFoundWhenGetOrdersByStatus() {
+        Long userId = 1L;
+
+        when(userRepository.findById(userId))
+                .thenReturn(Optional.empty());
+
+        assertEquals("User with id 1 not found",
+                assertThrows(UserNotFoundException.class, () -> {
+                    orderService.getOrdersByStatusAndUserId("NEW", userId);
+                }).getMessage());
+
+
+        verify(userRepository, times(1)).findById(userId);
+        verify(orderRepository, never())
+                .findByStatusAndUserId("NEW", userId);
     }
 }
