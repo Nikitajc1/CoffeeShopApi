@@ -1,6 +1,7 @@
 package com.coffeeshop.service;
 
 import com.coffeeshop.entity.User;
+import com.coffeeshop.exception.EmailAlreadyExistsException;
 import com.coffeeshop.exception.UserNotFoundException;
 import com.coffeeshop.repository.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -31,23 +32,27 @@ class UserServiceTest {
     @Autowired
     private Long id;
 
+    @Autowired
+    private String email;
+
     @Test
     void shouldCreateUser() {
         User user = new User("Test", "asd@asd.asd");
+        String email = user.getEmail();
 
         when(userRepository.save(any(User.class)))
                 .thenReturn(user);
+        when(userRepository.existsByEmail(email)).thenReturn(false);
 
         User result = userService.createUser("Test", "asd@asd.asd");
-
-        verify(userRepository, times(1)).save(any(User.class));
 
         assertAll(
                 () -> assertNotNull(result),
                 () -> assertEquals("Test", result.getName()),
                 () -> assertEquals("asd@asd.asd", result.getEmail())
         );
-
+        verify(userRepository, times(1)).save(any(User.class));
+        verify(userRepository, times(1)).existsByEmail(email);
     }
 
     @Test
@@ -84,6 +89,21 @@ class UserServiceTest {
         }).getMessage()
         );
         verify(userRepository, times(1)).findById(userId);
+    }
+
+    @Test
+    void shouldNotCreateUserWithSameEmail() {
+        String email = "asd@asd.asd";
+
+        when(userRepository.existsByEmail(email)).thenReturn(true);
+
+        assertEquals("User with email asd@asd.asd already exists"
+                , assertThrows(EmailAlreadyExistsException.class, () -> {
+                    userService.createUser("Test", email);
+        }).getMessage());
+        verify(userRepository, times(1)).existsByEmail(email);
+        verify(userRepository, never()).save(any(User.class));
+
     }
 
 }

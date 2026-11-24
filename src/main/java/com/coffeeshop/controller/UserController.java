@@ -4,6 +4,9 @@ import com.coffeeshop.dto.user.UserRequest;
 import com.coffeeshop.dto.user.UserResponse;
 import com.coffeeshop.entity.User;
 import com.coffeeshop.service.UserService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -16,14 +19,19 @@ public class UserController {
     }
 
     @PostMapping
-    public UserResponse createUser(@RequestBody UserRequest request) {
+    public ResponseEntity<UserResponse> createUser
+            (@Valid @RequestBody UserRequest request) {
         User user = userService.createUser(request.name(), request.email());
-        return new UserResponse(user.getId(), user.getName(), user.getEmail());
+        UserResponse createdUser =
+                new UserResponse(user.getId(), user.getName(), user.getEmail());
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
     }
 
     @GetMapping("/{id}")
-    public UserResponse getUserById(@PathVariable Long id) {
+    public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
         User user = userService.getUserById(id);
-        return new UserResponse(user.getId(), user.getName(), user.getEmail());
+        UserResponse response =
+                new UserResponse(user.getId(), user.getName(), user.getEmail());
+        return ResponseEntity.ok(response);
     }
 }

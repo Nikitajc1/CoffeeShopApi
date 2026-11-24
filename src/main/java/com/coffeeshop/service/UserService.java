@@ -1,6 +1,7 @@
 package com.coffeeshop.service;
 
 import com.coffeeshop.entity.User;
+import com.coffeeshop.exception.EmailAlreadyExistsException;
 import com.coffeeshop.exception.UserNotFoundException;
 import com.coffeeshop.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,9 @@ public class UserService {
     }
 
     public User createUser(String name, String email) {
+        if (userRepository.existsByEmail(email)) {
+            throw new EmailAlreadyExistsException(email);
+        }
         return userRepository.save(new User(name, email));
     }
 
