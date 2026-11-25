@@ -3,28 +3,22 @@ package com.coffeeshop.helpers;
 import net.datafaker.Faker;
 
 import java.util.Random;
+import java.util.UUID;
 import java.util.random.RandomGenerator;
 
 public class DataGenerator {
     private final Faker faker = new Faker(new Random(0));
 
-    private final String nameOfUserOne = faker.name().maleFirstName();
-    private final String nameOfUserTwo = faker.name().femaleFirstName();
     private final String[] status = {
             "NEW", "IN_PROGRESS", "COMPLETED"
     };
-    private final String descriptionOne = faker.text().text(10);
-    private final String descriptionTwo = faker.text().text(15);
-    private final String descriptionThree = faker.text().text(12);
-    private final String emailOne = faker.internet().emailAddress();
-    private final String emailTwo = faker.internet().emailAddress();
 
     public String getNameOfUserOne() {
-        return nameOfUserOne;
+        return faker.name().maleFirstName();
     }
 
     public String getNameOfUserTwo() {
-        return nameOfUserTwo;
+        return faker.name().femaleFirstName();
     }
 
     public String getStatus() {
@@ -32,22 +26,22 @@ public class DataGenerator {
     }
 
     public String getDescriptionOne() {
-        return descriptionOne;
+        return faker.text().text(10);
     }
 
     public String getEmailOne() {
-        return emailOne;
+            return UUID.randomUUID() + "@test.com";
     }
 
     public String getEmailTwo() {
-        return emailTwo;
+        return faker.internet().emailAddress();
     }
 
     public String getDescriptionTwo() {
-        return descriptionTwo;
+        return faker.text().text(15);
     }
 
     public String getDescriptionThree() {
-        return descriptionThree;
+        return faker.text().text(12);
     }
 }
