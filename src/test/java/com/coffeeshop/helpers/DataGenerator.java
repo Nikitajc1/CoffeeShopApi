@@ -7,14 +7,14 @@ import java.util.UUID;
 import java.util.random.RandomGenerator;
 
 public class DataGenerator {
-    private final Faker faker = new Faker(new Random(0));
+    private Faker faker = new Faker(new Random(RandomGenerator.getDefault().nextInt()));
 
     private final String[] status = {
             "NEW", "IN_PROGRESS", "COMPLETED"
     };
 
     public String getNameOfUserOne() {
-        return faker.name().maleFirstName();
+        return faker.name().femaleFirstName();
     }
 
     public String getNameOfUserTwo() {
@@ -30,7 +30,7 @@ public class DataGenerator {
     }
 
     public String getEmailOne() {
-            return UUID.randomUUID() + "@test.com";
+            return faker.internet().emailAddress();
     }
 
     public String getEmailTwo() {

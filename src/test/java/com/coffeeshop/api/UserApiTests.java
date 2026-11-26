@@ -3,13 +3,10 @@ package com.coffeeshop.api;
 import com.coffeeshop.entity.User;
 import com.coffeeshop.helpers.ApiHelper;
 import com.coffeeshop.helpers.TestDataCleaner;
-import io.restassured.http.ContentType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import java.sql.SQLException;
-
 import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
 
@@ -22,7 +19,7 @@ public class UserApiTests {
 
     @BeforeEach
     void init() {
-        user = help.createUser();
+        user = help.generateUser();
         userId = user.getId();
     }
 
