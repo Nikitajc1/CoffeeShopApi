@@ -6,7 +6,6 @@ import com.coffeeshop.helpers.ApiHelper;
 import com.coffeeshop.helpers.TestDataCleaner;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
-import io.restassured.specification.ResponseSpecification;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,12 +42,7 @@ public class OrderApiTests {
 
     @Test
     void shouldCreateOrder() {
-        given()
-                .spec(help.getSpec())
-                .body(request)
-                .when().post(help.getOrderPath())
-                .then()
-                .statusCode(201)
+        help.createOrder(request)
                 .body("userId", equalTo(userId.intValue()))
                 .body("id", notNullValue())
                 .body("description", equalTo(request.description()))
@@ -106,12 +100,7 @@ public class OrderApiTests {
 
     @Test
     void shouldGetOrderById() {
-        Response response = given()
-                .spec(help.getSpec())
-                .body(request)
-                .when().post(help.getOrderPath())
-                .then()
-                .statusCode(201)
+        Response response = help.createOrder(request)
                 .body("userId", equalTo(userId.intValue()))
                 .body("id", notNullValue())
                 .body("description", equalTo(request.description()))
@@ -142,6 +131,126 @@ public class OrderApiTests {
                 .spec(help.getSpec())
                 .pathParam("id", 123123123)
                 .when().get("/orders/{id}")
+                .then()
+                .statusCode(404)
+                .body("error", equalTo("Not Found"))
+                .body("message", containsString("not found"))
+                .body("details", empty());
+    }
+
+    @Test
+    void shouldGetOrdersByUserId() {
+        Response order1 = help.createOrder(request)
+                .body("userId", equalTo(userId.intValue()))
+                .body("id", notNullValue())
+                .body("description", equalTo(request.description()))
+                .body("status", equalTo(request.status()))
+                .body("createdAt", notNullValue())
+                .body("id", greaterThan(0))
+                .extract().response();
+
+        Response order2 = help.createOrder(request)
+                .body("userId", equalTo(userId.intValue()))
+                .body("id", notNullValue())
+                .body("description", equalTo(request.description()))
+                .body("status", equalTo(request.status()))
+                .body("createdAt", notNullValue())
+                .body("id", greaterThan(0))
+                .extract().response();
+
+        JsonPath path1 = order1.jsonPath();
+        JsonPath path2 = order2.jsonPath();
+
+        given()
+                .spec(help.getSpec())
+                .pathParam("userId", userId)
+                .when().get("/orders/user/{userId}")
+                .then()
+                .statusCode(200)
+                .body("size()", equalTo(2))
+                .body("id", containsInAnyOrder(
+                        path1.getLong("id"),
+                        path2.getLong("id")
+                ))
+                .body("userId", everyItem(equalTo(userId.intValue())))
+                .body("description", everyItem(equalTo(request.description())))
+                .body("status", everyItem(equalTo(request.status())))
+                .body("createdAt", everyItem(notNullValue()));
+    }
+
+    @Test
+    void shouldGetOrdersByIdAndStatus() {
+
+        help.createOrderStatus(request, "NEW")
+                .body("userId", equalTo(userId.intValue()))
+                .body("id", notNullValue())
+                .and()
+                .body("description", equalTo(request.description()))
+                .body("createdAt", notNullValue())
+                .body("id", greaterThan(0));
+
+        help.createOrderStatus(request, "COMPLETED")
+                .body("userId", equalTo(userId.intValue()))
+                .body("id", notNullValue())
+                .body("description", equalTo(request.description()))
+                .body("createdAt", notNullValue())
+                .body("id", greaterThan(0));
+
+        help.createOrderStatus(request, "NEW")
+                .body("userId", equalTo(userId.intValue()))
+                .body("id", notNullValue())
+                .body("description", equalTo(request.description()))
+                .body("createdAt", notNullValue())
+                .body("id", greaterThan(0));
+
+        given()
+                .spec(help.getSpec())
+                .pathParam("userId", userId)
+                .pathParam("status", "NEW")
+                .when().get("/orders/user/{userId}/{status}")
+                .then()
+                .statusCode(200)
+                .body("size()", equalTo(2))
+                .body("userId", everyItem(equalTo(userId.intValue())))
+                .body("status", everyItem(equalTo("NEW")));;
+    }
+
+    @Test
+    void shouldReturnEmptyOrders() {
+        help.createOrderStatus(request, "NEW")
+                .body("userId", equalTo(userId.intValue()))
+                .body("id", notNullValue())
+                .and()
+                .body("description", equalTo(request.description()))
+                .body("createdAt", notNullValue())
+                .body("id", greaterThan(0));
+
+        help.createOrderStatus(request, "NEW")
+                .body("userId", equalTo(userId.intValue()))
+                .body("id", notNullValue())
+                .and()
+                .body("description", equalTo(request.description()))
+                .body("createdAt", notNullValue())
+                .body("id", greaterThan(0));
+
+        given()
+                .spec(help.getSpec())
+                .pathParam("userId", userId)
+                .pathParam("status", "COMPLETED")
+                .when().get("/orders/user/{userId}/{status}")
+                .then()
+                .statusCode(200)
+                .body("size()", equalTo(0))
+                .body("$", empty());
+
+    }
+
+    @Test
+    void shouldReturnErrorForNonExistingUser() {
+        given()
+                .spec(help.getSpec())
+                .pathParam("userId", 123)
+                .when().get("/orders/user/{userId}")
                 .then()
                 .statusCode(404)
                 .body("error", equalTo("Not Found"))
