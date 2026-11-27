@@ -12,6 +12,7 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.dao.DataIntegrityViolationException;
 
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -71,8 +72,11 @@ public class OrderRepositoryTest {
         Order userOrder = userOrders.getFirst();
 
         assertAll(
-                () -> assertEquals(userOrder.getId(), order.getId()),
-                () -> assertEquals(userOrder.getCreatedAt(), order.getCreatedAt()),
+                () -> assertEquals(order.getId(), userOrder.getId()),
+                () -> assertEquals(
+                        order.getCreatedAt().truncatedTo(ChronoUnit.MICROS),
+                        userOrder.getCreatedAt()
+                ),
                 () -> assertEquals(userOrder.getDescription(), order.getDescription()),
                 () -> assertEquals(userOrder.getStatus(), order.getStatus())
         );
