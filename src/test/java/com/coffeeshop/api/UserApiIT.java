@@ -11,7 +11,7 @@ import java.sql.SQLException;
 import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
 
-public class UserApiTests {
+public class UserApiIT {
 
     private final ApiHelper help = new ApiHelper();
     private User user;
