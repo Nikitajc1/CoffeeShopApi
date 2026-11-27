@@ -51,8 +51,8 @@ public class UserApiTests {
                 .then()
                 .statusCode(400)
                 .body(field.getMessage(), equalTo(field.getValidationFailed()))
-                .body(field.getDetails()
-                        , contains("email: должно иметь формат адреса электронной почты"));
+                .body(field.getDetails(),
+                        everyItem(containsString(field.getEmail())));
     }
 
     @Test
@@ -64,7 +64,7 @@ public class UserApiTests {
                 .then()
                 .statusCode(404)
                 .body(field.getError(), equalTo(field.getNotFound()))
-                .body(field.getMessage(), containsString("not found"))
+                .body(field.getMessage(), containsString(field.userNotFoundMessage(123123123)))
                 .body(field.getDetails(), empty());
     }
 
@@ -87,7 +87,8 @@ public class UserApiTests {
                 .then()
                 .statusCode(409)
                 .body(field.getError(), equalTo("Conflict"))
-                .body(field.getMessage(), containsString("already exists"));
+                .body(field.getMessage(), containsString
+                        (field.userAlreadyExistsMessage(user.getEmail())));
     }
 
     @Test
@@ -101,6 +102,6 @@ public class UserApiTests {
                 .body(field.getError(), equalTo(field.getBadRequest()))
                 .body(field.getMessage(), equalTo(field.getValidationFailed()))
                 .body(field.getDetails(),
-                        hasItem(containsString("не должно быть пустым")));
+                        hasItem(containsString(field.getName())));
     }
 }

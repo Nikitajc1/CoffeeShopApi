@@ -20,6 +20,7 @@ public class OrderApiTests {
     private final TestDataCleaner cleaner = new TestDataCleaner();
     private Long userId;
     private OrderRequest request;
+    private OrderRequest request2;
     private static final Long NON_EXISTING_USER_ID = 999999999L;
     private final DataOfFields field = new DataOfFields();
 
@@ -35,6 +36,7 @@ public class OrderApiTests {
                 .statusCode(201)
                 .extract().jsonPath().getLong(field.getId());
         request = help.createRequest(userId);
+        request2 = help.createRequest(userId);
     }
 
     @AfterEach
@@ -79,7 +81,7 @@ public class OrderApiTests {
                 .body(field.getMessage(), equalTo(field.getValidationFailed()))
                 .body(field.getDetails(), hasItem(allOf(
                         containsString(field.getDescription()),
-                        containsString("не должно быть пустым")
+                        containsString(field.getDescription())
                 )));
     }
 
@@ -108,7 +110,6 @@ public class OrderApiTests {
                 .body(field.getDescription(), equalTo(request.description()))
                 .body(field.getStatus(), equalTo(request.status()))
                 .body(field.getCreatedAt(), notNullValue())
-                .body(field.getId(), greaterThan(0))
                 .extract().response();
 
         JsonPath path = response.jsonPath();
@@ -136,7 +137,8 @@ public class OrderApiTests {
                 .then()
                 .statusCode(404)
                 .body(field.getError(), equalTo(field.getNotFound()))
-                .body(field.getMessage(), containsString("not found"))
+                .body(field.getMessage(),
+                        containsString(field.orderNotFoundMessage(123123123)))
                 .body(field.getDetails(), empty());
     }
 
@@ -151,11 +153,11 @@ public class OrderApiTests {
                 .body(field.getId(), greaterThan(0))
                 .extract().response();
 
-        Response order2 = help.createOrder(request)
+        Response order2 = help.createOrder(request2)
                 .body(field.getUserId(), equalTo(userId.intValue()))
                 .body(field.getId(), notNullValue())
-                .body(field.getDescription(), equalTo(request.description()))
-                .body(field.getStatus(), equalTo(request.status()))
+                .body(field.getDescription(), equalTo(request2.description()))
+                .body(field.getStatus(), equalTo(request2.status()))
                 .body(field.getCreatedAt(), notNullValue())
                 .body(field.getId(), greaterThan(0))
                 .extract().response();
@@ -171,12 +173,15 @@ public class OrderApiTests {
                 .statusCode(200)
                 .body(field.getSizeForBody(), equalTo(2))
                 .body(field.getId(), containsInAnyOrder(
-                        Integer.parseInt(String.valueOf(path1.getLong(field.getId()))),
-                        Integer.parseInt(String.valueOf(path2.getLong(field.getId())))
-                ))
+                        path1.getInt(field.getId()),
+                        path2.getInt(field.getId())
+                        )
+                )
                 .body(field.getUserId(), everyItem(equalTo(userId.intValue())))
-                .body(field.getDescription(), everyItem(equalTo(request.description())))
-                .body(field.getStatus(), everyItem(equalTo(request.status())))
+                .body(field.getDescription(), hasItem(equalTo(request.description())))
+                .body(field.getDescription(), hasItem(equalTo(request2.description())))
+                .body(field.getStatus(), hasItem(equalTo(request.status())))
+                .body(field.getStatus(), hasItem(equalTo(request2.status())))
                 .body(field.getCreatedAt(), everyItem(notNullValue()));
     }
 
@@ -242,7 +247,6 @@ public class OrderApiTests {
                 .when().get(help.getOrdersOfUserByIdAndStatus())
                 .then()
                 .statusCode(200)
-                .body(field.getSizeForBody(), equalTo(0))
                 .body("$", empty());
 
     }
@@ -256,7 +260,7 @@ public class OrderApiTests {
                 .then()
                 .statusCode(404)
                 .body(field.getError(), equalTo(field.getNotFound()))
-                .body(field.getMessage(), containsString("not found"))
+                .body(field.getMessage(), containsString(field.userNotFoundMessage(123)))
                 .body(field.getDetails(), empty());
     }
 

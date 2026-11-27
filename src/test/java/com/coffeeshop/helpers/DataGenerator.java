@@ -1,13 +1,12 @@
 package com.coffeeshop.helpers;
 
 import net.datafaker.Faker;
-
 import java.util.Random;
-import java.util.UUID;
 import java.util.random.RandomGenerator;
 
 public class DataGenerator {
-    private Faker faker = new Faker(new Random(RandomGenerator.getDefault().nextInt()));
+    private final Faker faker = new Faker(new Random(RandomGenerator.getDefault().nextInt()));
+    private StringBuilder builder;
 
     private final String[] status = {
             "NEW", "IN_PROGRESS", "COMPLETED"
@@ -30,11 +29,17 @@ public class DataGenerator {
     }
 
     public String getEmailOne() {
-            return faker.internet().emailAddress();
+        String email = faker.internet().emailAddress();
+        builder = new StringBuilder(email);
+        builder.insert(1, RandomGenerator.getDefault().nextInt());
+        return builder.toString();
     }
 
     public String getEmailTwo() {
-        return faker.internet().emailAddress();
+        String email = faker.internet().emailAddress();
+        builder = new StringBuilder(email);
+        builder.insert(1, RandomGenerator.getDefault().nextInt());
+        return builder.toString();
     }
 
     public String getDescriptionTwo() {
