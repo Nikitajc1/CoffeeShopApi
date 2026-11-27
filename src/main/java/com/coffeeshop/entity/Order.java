@@ -23,7 +23,7 @@ public class Order {
     @Column(nullable = false, length = 50)
     private String status;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at", nullable = false, precision = 6)
     private LocalDateTime createdAt;
 
     protected Order() {}
