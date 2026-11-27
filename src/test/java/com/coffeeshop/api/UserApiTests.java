@@ -2,6 +2,7 @@ package com.coffeeshop.api;
 
 import com.coffeeshop.entity.User;
 import com.coffeeshop.helpers.ApiHelper;
+import com.coffeeshop.helpers.DataOfFields;
 import com.coffeeshop.helpers.TestDataCleaner;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,14 +14,14 @@ import static org.hamcrest.Matchers.*;
 public class UserApiTests {
 
     private final ApiHelper help = new ApiHelper();
-    private Long userId;
     private User user;
     private final TestDataCleaner cleaner = new TestDataCleaner();
+    private final DataOfFields field = new DataOfFields();
+
 
     @BeforeEach
     void init() {
         user = help.generateUser();
-        userId = user.getId();
     }
 
     @AfterEach
@@ -36,21 +37,21 @@ public class UserApiTests {
                 .when().post(help.getUserPath())
                 .then()
                 .statusCode(201)
-                .body("name", equalTo(user.getName()))
-                .body("email", equalTo(user.getEmail()))
-                .body("id", notNullValue());
+                .body(field.getName(), equalTo(user.getName()))
+                .body(field.getEmail(), equalTo(user.getEmail()))
+                .body(field.getId(), notNullValue());
     }
 
     @Test
     void shouldNotCreateUserWithInvalidEmail() {
         given()
                 .spec(help.getSpec())
-                .body(new User("asd", "asd"))
+                .body(new User(field.getTestName(), "asd"))
                 .when().post(help.getUserPath())
                 .then()
                 .statusCode(400)
-                .body("message", equalTo("Validation failed"))
-                .body("details"
+                .body(field.getMessage(), equalTo(field.getValidationFailed()))
+                .body(field.getDetails()
                         , contains("email: должно иметь формат адреса электронной почты"));
     }
 
@@ -58,13 +59,13 @@ public class UserApiTests {
     void shouldNotGetNonExistingUser() {
         given()
                 .spec(help.getSpec())
-                .pathParam("id", 123123123)
-                .when().get("/users/{id}")
+                .pathParam(field.getId(), 123123123)
+                .when().get(help.getUserField())
                 .then()
                 .statusCode(404)
-                .body("error", equalTo("Not Found"))
-                .body("message", containsString(" not found"))
-                .body("details", empty());
+                .body(field.getError(), equalTo(field.getNotFound()))
+                .body(field.getMessage(), containsString("not found"))
+                .body(field.getDetails(), empty());
     }
 
     @Test
@@ -75,9 +76,9 @@ public class UserApiTests {
                 .when().post(help.getUserPath())
                 .then()
                 .statusCode(201)
-                .body("name", equalTo(user.getName()))
-                .body("email", equalTo(user.getEmail()))
-                .body("id", notNullValue());
+                .body(field.getName(), equalTo(user.getName()))
+                .body(field.getEmail(), equalTo(user.getEmail()))
+                .body(field.getId(), notNullValue());
 
         given()
                 .spec(help.getSpec())
@@ -85,8 +86,8 @@ public class UserApiTests {
                 .when().post(help.getUserPath())
                 .then()
                 .statusCode(409)
-                .body("error", equalTo("Conflict"))
-                .body("message", containsString("already exists"));
+                .body(field.getError(), equalTo("Conflict"))
+                .body(field.getMessage(), containsString("already exists"));
     }
 
     @Test
@@ -97,8 +98,9 @@ public class UserApiTests {
                 .when().post(help.getUserPath())
                 .then()
                 .statusCode(400)
-                .body("error", equalTo("Bad Request"))
-                .body("message", equalTo("Validation failed"))
-                .body("details", hasItem(containsString("не должно быть пустым")));
+                .body(field.getError(), equalTo(field.getBadRequest()))
+                .body(field.getMessage(), equalTo(field.getValidationFailed()))
+                .body(field.getDetails(),
+                        hasItem(containsString("не должно быть пустым")));
     }
 }

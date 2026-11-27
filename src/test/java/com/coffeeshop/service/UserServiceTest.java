@@ -3,6 +3,7 @@ package com.coffeeshop.service;
 import com.coffeeshop.entity.User;
 import com.coffeeshop.exception.EmailAlreadyExistsException;
 import com.coffeeshop.exception.UserNotFoundException;
+import com.coffeeshop.helpers.DataOfFields;
 import com.coffeeshop.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,6 +24,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
+    private final DataOfFields field = new DataOfFields();
+
     @Mock
     private UserRepository userRepository;
 
@@ -37,19 +40,19 @@ class UserServiceTest {
 
     @Test
     void shouldCreateUser() {
-        User user = new User("Test", "asd@asd.asd");
+        User user = new User(field.getTestName(), field.getAsdEmail());
         String email = user.getEmail();
 
         when(userRepository.save(any(User.class)))
                 .thenReturn(user);
         when(userRepository.existsByEmail(email)).thenReturn(false);
 
-        User result = userService.createUser("Test", "asd@asd.asd");
+        User result = userService.createUser(field.getTestName(), field.getAsdEmail());
 
         assertAll(
                 () -> assertNotNull(result),
-                () -> assertEquals("Test", result.getName()),
-                () -> assertEquals("asd@asd.asd", result.getEmail())
+                () -> assertEquals(field.getTestName(), result.getName()),
+                () -> assertEquals(field.getAsdEmail(), result.getEmail())
         );
         verify(userRepository, times(1)).save(any(User.class));
         verify(userRepository, times(1)).existsByEmail(email);
@@ -57,7 +60,7 @@ class UserServiceTest {
 
     @Test
     void shouldGetUserById() {
-        User user = new User("Test", "asd@asd.asd");
+        User user = new User(field.getTestName(), field.getAsdEmail());
         user.setId(1L);
 
         when(userRepository.findById(user.getId()))
@@ -83,7 +86,7 @@ class UserServiceTest {
         when(userRepository.findById(userId))
                 .thenReturn(Optional.empty());
 
-        assertEquals("User with id 1 not found",
+        assertEquals(field.userNotFoundMessage(1),
                 assertThrows(UserNotFoundException.class, () -> {
             userService.getUserById(userId);
         }).getMessage()
@@ -93,13 +96,13 @@ class UserServiceTest {
 
     @Test
     void shouldNotCreateUserWithSameEmail() {
-        String email = "asd@asd.asd";
+        String email = field.getAsdEmail();
 
         when(userRepository.existsByEmail(email)).thenReturn(true);
 
-        assertEquals("User with email asd@asd.asd already exists"
+        assertEquals(field.userAlreadyExistsMessage(field.getAsdEmail())
                 , assertThrows(EmailAlreadyExistsException.class, () -> {
-                    userService.createUser("Test", email);
+                    userService.createUser(field.getTestName(), email);
         }).getMessage());
         verify(userRepository, times(1)).existsByEmail(email);
         verify(userRepository, never()).save(any(User.class));

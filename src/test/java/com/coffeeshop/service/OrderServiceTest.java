@@ -4,6 +4,7 @@ import com.coffeeshop.entity.Order;
 import com.coffeeshop.entity.User;
 import com.coffeeshop.exception.OrderNotFoundException;
 import com.coffeeshop.exception.UserNotFoundException;
+import com.coffeeshop.helpers.DataOfFields;
 import com.coffeeshop.repository.OrderRepository;
 import com.coffeeshop.repository.UserRepository;
 import org.aspectj.weaver.ast.Or;
@@ -27,6 +28,9 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 public class OrderServiceTest {
 
+    private final DataOfFields field = new DataOfFields();
+
+
     @Mock
     private OrderRepository orderRepository;
 
@@ -38,9 +42,9 @@ public class OrderServiceTest {
 
     @Test
     void shouldCreateOrder() {
-        User user = new User("Test", "asd@asd.asd");
+        User user = new User(field.getTestName(), field.getAsdEmail());
         user.setId(1L);
-        Order order = new Order(user, "asd", "NEW");
+        Order order = new Order(user, field.getAsdDescription(), field.getStatusNew());
         order.setId(1L);
         order.setCreatedAt(LocalDateTime.now());
 
@@ -50,7 +54,7 @@ public class OrderServiceTest {
         when(orderRepository.save(any(Order.class)))
                 .thenReturn(order);
 
-        Order result = orderService.createOrder(1L, "asd", "NEW");
+        Order result = orderService.createOrder(1L, field.getAsdDescription(), field.getStatusNew());
 
         ArgumentCaptor<Order> captor = ArgumentCaptor.forClass(Order.class);
 
@@ -63,15 +67,15 @@ public class OrderServiceTest {
                 () -> assertNotNull(result),
                 () -> assertSame(order, result),
                 () -> assertSame(user, capturedOrder.getUser()),
-                () -> assertEquals("asd", capturedOrder.getDescription()),
-                () -> assertEquals("NEW", capturedOrder.getStatus())
+                () -> assertEquals(field.getAsdDescription(), capturedOrder.getDescription()),
+                () -> assertEquals(field.getStatusNew(), capturedOrder.getStatus())
         );
     }
 
     @Test
     void shouldGetOrderById() {
-        User user = new User("Test", "asd@asd.asd");
-        Order order = new Order(user, "asd", "NEW");
+        User user = new User(field.getTestName(), field.getAsdEmail());
+        Order order = new Order(user, field.getAsdDescription(), field.getStatusNew());
         order.setId(1L);
         order.setCreatedAt(LocalDateTime.now());
 
@@ -100,7 +104,7 @@ public class OrderServiceTest {
                 .thenReturn(Optional.empty());
 
         assertEquals(
-                "Order with id 1 not found",
+                field.orderNotFoundMessage(1),
                 assertThrows(OrderNotFoundException.class, () -> {
                     orderService.getOrderById(orderId);
                 }).getMessage()
@@ -116,9 +120,9 @@ public class OrderServiceTest {
         when(userRepository.findById(userId))
                 .thenReturn(Optional.empty());
 
-        assertEquals("User with id 1 not found",
+        assertEquals(field.userNotFoundMessage(1),
                 assertThrows(UserNotFoundException.class, () -> {
-                    orderService.createOrder(userId, "asd", "NEW");
+                    orderService.createOrder(userId, field.getAsdDescription(), field.getStatusNew());
                 }).getMessage());
 
         verify(userRepository, times(1)).findById(userId);
@@ -127,9 +131,9 @@ public class OrderServiceTest {
 
     @Test
     void shouldGetOrdersByUserId() {
-        User user = new User("Test", "asd@asd.asd");
+        User user = new User(field.getTestName(), field.getAsdEmail());
         user.setId(1L);
-        Order order = new Order(user, "asd", "NEW");
+        Order order = new Order(user, field.getAsdDescription(), field.getStatusNew());
         List<Order> orders = List.of(order);
 
         when(userRepository.findById(user.getId()))
@@ -150,7 +154,7 @@ public class OrderServiceTest {
 
     @Test
     void shouldReturnEmptyListWhenUserHasNoOrders() {
-        User user = new User("Test", "asd@asd.asd");
+        User user = new User(field.getTestName(), field.getAsdEmail());
         user.setId(1L);
 
         when(userRepository.findById(user.getId()))
@@ -174,7 +178,7 @@ public class OrderServiceTest {
         when(userRepository.findById(userId))
                 .thenReturn(Optional.empty());
 
-        assertEquals("User with id 1 not found",
+        assertEquals(field.userNotFoundMessage(1),
                 assertThrows(UserNotFoundException.class, () -> {
                     orderService.getOrdersByUserId(userId);
                 }).getMessage());
@@ -185,9 +189,9 @@ public class OrderServiceTest {
 
     @Test
     void shouldGetOrdersByStatusAndUserId() {
-        User user = new User("Test", "asd@asd.asd");
+        User user = new User(field.getTestName(), field.getAsdEmail());
         user.setId(1L);
-        Order order = new Order(user, "asd", "NEW");
+        Order order = new Order(user, field.getAsdDescription(), field.getStatusNew());
         List<Order> orders = List.of(order);
 
         when(userRepository.findById(user.getId()))
@@ -202,7 +206,7 @@ public class OrderServiceTest {
         assertAll(
                 () -> assertEquals(1, result.size()),
                 () -> assertSame(order, result.getFirst()),
-                () -> assertEquals("NEW", result.getFirst().getStatus())
+                () -> assertEquals(field.getStatusNew(), result.getFirst().getStatus())
         );
 
         verify(userRepository, times(1)).findById(user.getId());
@@ -213,23 +217,23 @@ public class OrderServiceTest {
 
     @Test
     void shouldReturnEmptyListWhenNoOrdersWithSpecifiedStatus() {
-        User user = new User("Test", "asd@asd.asd");
+        User user = new User(field.getTestName(), field.getAsdEmail());
         user.setId(1L);
 
         when(userRepository.findById(user.getId()))
                 .thenReturn(Optional.of(user));
 
-        when(orderRepository.findByStatusAndUserId("NEW", user.getId()))
+        when(orderRepository.findByStatusAndUserId(field.getStatusNew(), user.getId()))
                 .thenReturn(List.of());
 
         List<Order> result = orderService
-                .getOrdersByStatusAndUserId("NEW", user.getId());
+                .getOrdersByStatusAndUserId(field.getStatusNew(), user.getId());
 
         assertEquals(0, result.size());
 
         verify(userRepository, times(1)).findById(user.getId());
         verify(orderRepository, times(1))
-                .findByStatusAndUserId("NEW", user.getId());
+                .findByStatusAndUserId(field.getStatusNew(), user.getId());
     }
 
     @Test
@@ -239,14 +243,14 @@ public class OrderServiceTest {
         when(userRepository.findById(userId))
                 .thenReturn(Optional.empty());
 
-        assertEquals("User with id 1 not found",
+        assertEquals(field.userNotFoundMessage(1),
                 assertThrows(UserNotFoundException.class, () -> {
-                    orderService.getOrdersByStatusAndUserId("NEW", userId);
+                    orderService.getOrdersByStatusAndUserId(field.getStatusNew(), userId);
                 }).getMessage());
 
 
         verify(userRepository, times(1)).findById(userId);
         verify(orderRepository, never())
-                .findByStatusAndUserId("NEW", userId);
+                .findByStatusAndUserId(field.getStatusNew(), userId);
     }
 }

@@ -3,6 +3,7 @@ package com.coffeeshop.repository;
 import com.coffeeshop.entity.Order;
 import com.coffeeshop.entity.User;
 import com.coffeeshop.helpers.DataGenerator;
+import com.coffeeshop.helpers.DataOfFields;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.Test;
@@ -22,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class OrderRepositoryTest {
 
     private final DataGenerator data = new DataGenerator();
+    private final DataOfFields field = new DataOfFields();
 
     @Autowired
     private OrderRepository orderRepository;
@@ -32,16 +34,17 @@ public class OrderRepositoryTest {
 
     @Test
     void checkOrderRepository() {
-        User user = userRepository.save(new User("Oleg", "asd@asd.asd"));
+        User user = userRepository.save(new User(field.getTestName(), field.getAsdEmail()));
         assertNotNull(user.getId());
 
-        Order order = orderRepository.save(new Order(user, "asd", "NEW"));
+        Order order = orderRepository.save(new Order
+                (user, field.getAsdDescription(), field.getStatusNew()));
         assertNotNull(order.getCreatedAt());
 
         assertAll(
                 () -> assertNotNull(order.getId()),
-                () -> assertEquals("asd", order.getDescription()),
-                () -> assertEquals("NEW", order.getStatus()),
+                () -> assertEquals(field.getAsdDescription(), order.getDescription()),
+                () -> assertEquals(field.getStatusNew(), order.getStatus()),
                 () -> assertEquals(user.getId(), order.getUser().getId())
         );
     }
@@ -199,29 +202,31 @@ public class OrderRepositoryTest {
         assertNotNull(user1.getId());
 
         Order order1ForUser1 = orderRepository.save(
-                new Order(user1, data.getDescriptionOne(), "NEW")
+                new Order(user1, data.getDescriptionOne(), field.getStatusNew())
         );
         assertNotNull(order1ForUser1.getCreatedAt());
 
         Order order2ForUser1 = orderRepository.save(
-                new Order(user1, data.getDescriptionTwo(), "NEW")
+                new Order(user1, data.getDescriptionTwo(), field.getStatusNew())
         );
         assertNotNull(order2ForUser1.getCreatedAt());
 
         Order order3ForUser1 = orderRepository.save(
-                new Order(user1, data.getDescriptionThree(), "COMPLETED")
+                new Order(user1, data.getDescriptionThree(), field.getStatusCompleted())
         );
         assertNotNull(order3ForUser1.getCreatedAt());
 
         entityManager.flush();
         entityManager.clear();
 
-        List<Order> orders = orderRepository.findByStatusAndUserId("NEW", user1.getId());
+        List<Order> orders = orderRepository.findByStatusAndUserId(
+                field.getStatusNew(),
+                user1.getId());
 
         assertAll(
                 () -> assertEquals(2, orders.size()),
                 () -> assertTrue(orders.stream()
-                        .allMatch(order -> order.getStatus().equals("NEW")))
+                        .allMatch(order -> order.getStatus().equals(field.getStatusNew())))
         );
 
 
@@ -235,17 +240,17 @@ public class OrderRepositoryTest {
         assertNotNull(user1.getId());
 
         Order order1ForUser1 = orderRepository.save(
-                new Order(user1, data.getDescriptionOne(), "COMPLETED")
+                new Order(user1, data.getDescriptionOne(), field.getStatusCompleted())
         );
         assertNotNull(order1ForUser1.getCreatedAt());
 
         Order order2ForUser1 = orderRepository.save(
-                new Order(user1, data.getDescriptionTwo(), "COMPLETED")
+                new Order(user1, data.getDescriptionTwo(), field.getStatusCompleted())
         );
         assertNotNull(order2ForUser1.getCreatedAt());
 
         Order order3ForUser1 = orderRepository.save(
-                new Order(user1, data.getDescriptionThree(), "COMPLETED")
+                new Order(user1, data.getDescriptionThree(), field.getStatusCompleted())
         );
         assertNotNull(order3ForUser1.getCreatedAt());
 
@@ -265,7 +270,8 @@ public class OrderRepositoryTest {
 
         Set<Long> expectedIds = Set.of(
                 order1ForUser1.getId(),
-                order2ForUser1.getId()
+                order2ForUser1.getId(),
+                order3ForUser1.getId()
         );
 
         Set<Long> actualIds = orders.stream()

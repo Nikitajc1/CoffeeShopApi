@@ -3,6 +3,7 @@ package com.coffeeshop.api;
 import com.coffeeshop.dto.order.OrderRequest;
 import com.coffeeshop.entity.User;
 import com.coffeeshop.helpers.ApiHelper;
+import com.coffeeshop.helpers.DataOfFields;
 import com.coffeeshop.helpers.TestDataCleaner;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
@@ -20,6 +21,7 @@ public class OrderApiTests {
     private Long userId;
     private OrderRequest request;
     private static final Long NON_EXISTING_USER_ID = 999999999L;
+    private final DataOfFields field = new DataOfFields();
 
 
     @BeforeEach
@@ -31,7 +33,7 @@ public class OrderApiTests {
                 .when().post(help.getUserPath())
                 .then()
                 .statusCode(201)
-                .extract().jsonPath().getLong("id");
+                .extract().jsonPath().getLong(field.getId());
         request = help.createRequest(userId);
     }
 
@@ -43,12 +45,12 @@ public class OrderApiTests {
     @Test
     void shouldCreateOrder() {
         help.createOrder(request)
-                .body("userId", equalTo(userId.intValue()))
-                .body("id", notNullValue())
-                .body("description", equalTo(request.description()))
-                .body("status", equalTo(request.status()))
-                .body("createdAt", notNullValue())
-                .body("id", greaterThan(0));
+                .body(field.getUserId(), equalTo(userId.intValue()))
+                .body(field.getId(), notNullValue())
+                .body(field.getDescription(), equalTo(request.description()))
+                .body(field.getStatus(), equalTo(request.status()))
+                .body(field.getCreatedAt(), notNullValue())
+                .body(field.getId(), greaterThan(0));
     }
 
     @Test
@@ -56,13 +58,13 @@ public class OrderApiTests {
         given()
                 .spec(help.getSpec())
                 .body(new OrderRequest(NON_EXISTING_USER_ID,
-                        "asd", "NEW"))
+                        field.getAsdDescription(), field.getStatusNew()))
                 .when().post(help.getOrderPath())
                 .then()
                 .statusCode(404)
-                .body("error", equalTo("Not Found"))
-                .body("message", containsString("not found"))
-                .body("details", empty());
+                .body(field.getError(), equalTo(field.getNotFound()))
+                .body(field.getMessage(), containsString("not found"))
+                .body(field.getDetails(), empty());
     }
 
     @Test
@@ -73,10 +75,10 @@ public class OrderApiTests {
                 .when().post(help.getOrderPath())
                 .then()
                 .statusCode(400)
-                .body("error", equalTo("Bad Request"))
-                .body("message", equalTo("Validation failed"))
-                .body("details", hasItem(allOf(
-                        containsString("description"),
+                .body(field.getError(), equalTo(field.getBadRequest()))
+                .body(field.getMessage(), equalTo(field.getValidationFailed()))
+                .body(field.getDetails(), hasItem(allOf(
+                        containsString(field.getDescription()),
                         containsString("не должно быть пустым")
                 )));
     }
@@ -90,72 +92,72 @@ public class OrderApiTests {
                 .when().post(help.getOrderPath())
                 .then()
                 .statusCode(400)
-                .body("error", equalTo("Bad Request"))
-                .body("message", equalTo("Validation failed"))
-                .body("details", hasItem(allOf(
-                        containsString("status"),
-                        containsString("Status must be NEW, IN_PROGRESS or COMPLETED")
+                .body(field.getError(), equalTo(field.getBadRequest()))
+                .body(field.getMessage(), equalTo(field.getValidationFailed()))
+                .body(field.getDetails(), hasItem(allOf(
+                        containsString(field.getStatus()),
+                        containsString(field.getStatusMustBe())
                 )));
     }
 
     @Test
     void shouldGetOrderById() {
         Response response = help.createOrder(request)
-                .body("userId", equalTo(userId.intValue()))
-                .body("id", notNullValue())
-                .body("description", equalTo(request.description()))
-                .body("status", equalTo(request.status()))
-                .body("createdAt", notNullValue())
-                .body("id", greaterThan(0))
+                .body(field.getUserId(), equalTo(userId.intValue()))
+                .body(field.getId(), notNullValue())
+                .body(field.getDescription(), equalTo(request.description()))
+                .body(field.getStatus(), equalTo(request.status()))
+                .body(field.getCreatedAt(), notNullValue())
+                .body(field.getId(), greaterThan(0))
                 .extract().response();
 
         JsonPath path = response.jsonPath();
-        Long id = path.getLong("id");
+        Long id = path.getLong(field.getId());
 
         given()
                 .spec(help.getSpec())
-                .pathParam("id", id)
-                .when().get("/orders/{id}")
+                .pathParam(field.getId(), id)
+                .when().get(help.getOrderField())
                 .then()
                 .statusCode(200)
-                .body("userId", equalTo(path.get("userId")))
-                .body("id", equalTo(path.get("id")))
-                .body("description", equalTo(path.getString("description")))
-                .body("status", equalTo(path.getString("status")))
-                .body("createdAt", equalTo(path.getString("createdAt")));
+                .body(field.getUserId(), equalTo(path.get(field.getUserId())))
+                .body(field.getId(), equalTo(path.get(field.getId())))
+                .body(field.getDescription(), equalTo(path.getString(field.getDescription())))
+                .body(field.getStatus(), equalTo(path.getString(field.getStatus())))
+                .body(field.getCreatedAt(), equalTo(path.getString(field.getCreatedAt())));
     }
 
     @Test
     void shouldNotGetNonExistingOrder() {
         given()
                 .spec(help.getSpec())
-                .pathParam("id", 123123123)
-                .when().get("/orders/{id}")
+                .pathParam(field.getId(), 123123123)
+                .when().get(help.getOrderField())
                 .then()
                 .statusCode(404)
-                .body("error", equalTo("Not Found"))
-                .body("message", containsString("not found"))
-                .body("details", empty());
+                .body(field.getError(), equalTo(field.getNotFound()))
+                .body(field.getMessage(), containsString("not found"))
+                .body(field.getDetails(), empty());
     }
 
     @Test
     void shouldGetOrdersByUserId() {
         Response order1 = help.createOrder(request)
-                .body("userId", equalTo(userId.intValue()))
-                .body("id", notNullValue())
-                .body("description", equalTo(request.description()))
-                .body("status", equalTo(request.status()))
-                .body("createdAt", notNullValue())
-                .body("id", greaterThan(0))
+                .body(field.getUserId(), equalTo(userId.intValue()))
+                .body(field.getId(), notNullValue())
+                .body(field.getDescription(), equalTo(request.description()))
+                .body(field.getStatus(), equalTo(request.status()))
+                .body(field.getCreatedAt(), notNullValue())
+                .body(field.getId(), greaterThan(0))
                 .extract().response();
 
         Response order2 = help.createOrder(request)
-                .body("userId", equalTo(userId.intValue()))
-                .body("id", notNullValue())
-                .body("description", equalTo(request.description()))
-                .body("status", equalTo(request.status()))
-                .body("createdAt", notNullValue())
-                .body("id", greaterThan(0))
+                .body(field.getUserId(), equalTo(userId.intValue()))
+                .body(field.getId(), notNullValue())
+                .body(field.getDescription(), equalTo(request.description()))
+                .body(field.getStatus(), equalTo(request.status()))
+                .body(field.getCreatedAt(), notNullValue())
+                .body(field.getId(), greaterThan(0))
                 .extract().response();
 
         JsonPath path1 = order1.jsonPath();
@@ -163,84 +165,84 @@ public class OrderApiTests {
 
         given()
                 .spec(help.getSpec())
-                .pathParam("userId", userId)
-                .when().get("/orders/user/{userId}")
+                .pathParam(field.getUserId(), userId)
+                .when().get(help.getOrdersOfUserById())
                 .then()
                 .statusCode(200)
-                .body("size()", equalTo(2))
-                .body("id", containsInAnyOrder(
-                        path1.getLong("id"),
-                        path2.getLong("id")
+                .body(field.getSizeForBody(), equalTo(2))
+                .body(field.getId(), containsInAnyOrder(
+                        Integer.parseInt(String.valueOf(path1.getLong(field.getId()))),
+                        Integer.parseInt(String.valueOf(path2.getLong(field.getId())))
                 ))
-                .body("userId", everyItem(equalTo(userId.intValue())))
-                .body("description", everyItem(equalTo(request.description())))
-                .body("status", everyItem(equalTo(request.status())))
-                .body("createdAt", everyItem(notNullValue()));
+                .body(field.getUserId(), everyItem(equalTo(userId.intValue())))
+                .body(field.getDescription(), everyItem(equalTo(request.description())))
+                .body(field.getStatus(), everyItem(equalTo(request.status())))
+                .body(field.getCreatedAt(), everyItem(notNullValue()));
     }
 
     @Test
     void shouldGetOrdersByIdAndStatus() {
 
-        help.createOrderStatus(request, "NEW")
-                .body("userId", equalTo(userId.intValue()))
-                .body("id", notNullValue())
+        help.createOrderStatus(request, field.getStatusNew())
+                .body(field.getUserId(), equalTo(userId.intValue()))
+                .body(field.getId(), notNullValue())
                 .and()
-                .body("description", equalTo(request.description()))
-                .body("createdAt", notNullValue())
-                .body("id", greaterThan(0));
+                .body(field.getDescription(), equalTo(request.description()))
+                .body(field.getCreatedAt(), notNullValue())
+                .body(field.getId(), greaterThan(0));
 
-        help.createOrderStatus(request, "COMPLETED")
-                .body("userId", equalTo(userId.intValue()))
-                .body("id", notNullValue())
-                .body("description", equalTo(request.description()))
-                .body("createdAt", notNullValue())
-                .body("id", greaterThan(0));
+        help.createOrderStatus(request, field.getStatusCompleted())
+                .body(field.getUserId(), equalTo(userId.intValue()))
+                .body(field.getId(), notNullValue())
+                .body(field.getDescription(), equalTo(request.description()))
+                .body(field.getCreatedAt(), notNullValue())
+                .body(field.getId(), greaterThan(0));
 
-        help.createOrderStatus(request, "NEW")
-                .body("userId", equalTo(userId.intValue()))
-                .body("id", notNullValue())
-                .body("description", equalTo(request.description()))
-                .body("createdAt", notNullValue())
-                .body("id", greaterThan(0));
+        help.createOrderStatus(request, field.getStatusNew())
+                .body(field.getUserId(), equalTo(userId.intValue()))
+                .body(field.getId(), notNullValue())
+                .body(field.getDescription(), equalTo(request.description()))
+                .body(field.getCreatedAt(), notNullValue())
+                .body(field.getId(), greaterThan(0));
 
         given()
                 .spec(help.getSpec())
-                .pathParam("userId", userId)
-                .pathParam("status", "NEW")
-                .when().get("/orders/user/{userId}/{status}")
+                .pathParam(field.getUserId(), userId)
+                .pathParam(field.getStatus(), field.getStatusNew())
+                .when().get(help.getOrdersOfUserByIdAndStatus())
                 .then()
                 .statusCode(200)
-                .body("size()", equalTo(2))
-                .body("userId", everyItem(equalTo(userId.intValue())))
-                .body("status", everyItem(equalTo("NEW")));;
+                .body(field.getSizeForBody(), equalTo(2))
+                .body(field.getUserId(), everyItem(equalTo(userId.intValue())))
+                .body(field.getStatus(), everyItem(equalTo(field.getStatusNew())));;
     }
 
     @Test
     void shouldReturnEmptyOrders() {
-        help.createOrderStatus(request, "NEW")
-                .body("userId", equalTo(userId.intValue()))
-                .body("id", notNullValue())
+        help.createOrderStatus(request, field.getStatusNew())
+                .body(field.getUserId(), equalTo(userId.intValue()))
+                .body(field.getId(), notNullValue())
                 .and()
-                .body("description", equalTo(request.description()))
-                .body("createdAt", notNullValue())
-                .body("id", greaterThan(0));
+                .body(field.getDescription(), equalTo(request.description()))
+                .body(field.getCreatedAt(), notNullValue())
+                .body(field.getId(), greaterThan(0));
 
-        help.createOrderStatus(request, "NEW")
-                .body("userId", equalTo(userId.intValue()))
-                .body("id", notNullValue())
+        help.createOrderStatus(request, field.getStatusNew())
+                .body(field.getUserId(), equalTo(userId.intValue()))
+                .body(field.getId(), notNullValue())
                 .and()
-                .body("description", equalTo(request.description()))
-                .body("createdAt", notNullValue())
-                .body("id", greaterThan(0));
+                .body(field.getDescription(), equalTo(request.description()))
+                .body(field.getCreatedAt(), notNullValue())
+                .body(field.getId(), greaterThan(0));
 
         given()
                 .spec(help.getSpec())
-                .pathParam("userId", userId)
-                .pathParam("status", "COMPLETED")
-                .when().get("/orders/user/{userId}/{status}")
+                .pathParam(field.getUserId(), userId)
+                .pathParam(field.getStatus(), field.getStatusCompleted())
+                .when().get(help.getOrdersOfUserByIdAndStatus())
                 .then()
                 .statusCode(200)
-                .body("size()", equalTo(0))
+                .body(field.getSizeForBody(), equalTo(0))
                 .body("$", empty());
 
     }
@@ -249,13 +251,13 @@ public class OrderApiTests {
     void shouldReturnErrorForNonExistingUser() {
         given()
                 .spec(help.getSpec())
-                .pathParam("userId", 123)
-                .when().get("/orders/user/{userId}")
+                .pathParam(field.getUserId(), 123)
+                .when().get(help.getOrdersOfUserById())
                 .then()
                 .statusCode(404)
-                .body("error", equalTo("Not Found"))
-                .body("message", containsString("not found"))
-                .body("details", empty());
+                .body(field.getError(), equalTo(field.getNotFound()))
+                .body(field.getMessage(), containsString("not found"))
+                .body(field.getDetails(), empty());
     }
 
 }

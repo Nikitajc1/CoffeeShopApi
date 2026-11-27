@@ -15,6 +15,10 @@ public class ApiHelper {
     private final String orderPath = "/orders";
     private final DataGenerator data = new DataGenerator();
     private final RequestSpecification specification;
+    private final String ordersOfUserById = "/orders/user/{userId}";
+    private final String ordersOfUserByIdAndStatus = "/orders/user/{userId}/{status}";
+    private final String orderField = "/orders/{id}";
+    private final String userField = "/users/{id}";
 
     public ApiHelper() {
         specification = new RequestSpecBuilder()
@@ -62,4 +66,19 @@ public class ApiHelper {
                 .statusCode(201);
     }
 
+    public String getOrdersOfUserById() {
+        return ordersOfUserById;
+    }
+
+    public String getOrdersOfUserByIdAndStatus() {
+        return ordersOfUserByIdAndStatus;
+    }
+
+    public String getOrderField() {
+        return orderField;
+    }
+
+    public String getUserField() {
+        return userField;
+    }
 }
