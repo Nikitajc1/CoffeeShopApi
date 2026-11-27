@@ -125,7 +125,8 @@ public class OrderApiIT {
                 .body(field.getId(), equalTo(path.get(field.getId())))
                 .body(field.getDescription(), equalTo(path.getString(field.getDescription())))
                 .body(field.getStatus(), equalTo(path.getString(field.getStatus())))
-                .body(field.getCreatedAt(), equalTo(path.getString(field.getCreatedAt())));
+                .body(field.getCreatedAt(), equalTo(path.getString(field.getCreatedAt())))
+                .body(field.getCreatedAt(), notNullValue());
     }
 
     @Test
